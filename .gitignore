@@ -19,6 +19,11 @@ data/*
 !data/captain/
 !data/protected areas/
 !data/birds_aoh/
+!data/gHM/
+
+# gHM.tif itself is a 2.1 GB symlink; only the derived future layer is tracked
+data/gHM/*
+!data/gHM/disturbance_future_2075.tif
 
 data/protected areas/*
 !data/protected areas/protected_areas_ugf.*

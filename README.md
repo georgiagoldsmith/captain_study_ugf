@@ -14,8 +14,9 @@ The code is here. **Most of the data is not** — `data/` is around 130 MB of
 rasters, and `data/gHM/gHM.tif` alone is 2.1 GB. Those are ignored by git.
 
 Tracked: the study boundary, the species trait tables, the protected-area
-clip, and `data/captain/disturbance.tif` (the grid template). These are small
-and awkward to rebuild.
+clip, `data/captain/disturbance.tif` (the grid template), and
+`data/gHM/disturbance_future_2075.tif` (the projected 2075 disturbance layer).
+These are small and awkward to rebuild.
 
 Not tracked, and needed before anything will run:
 

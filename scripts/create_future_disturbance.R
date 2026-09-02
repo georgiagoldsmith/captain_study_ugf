@@ -36,6 +36,8 @@ fut <- ghm + (m75 - m20)
 fut <- clamp(fut, 0, 0.999)
 fut <- ifel(lu75 %in% c(1,6), 1, fut)     # water, urban -> exclusion sentinel
 writeRaster(fut, file.path(DD,"environmental_layers","disturbance_future_2075.tif"), overwrite=TRUE)
+# keep a copy in the project too, next to the present-day gHM it is derived from
+writeRaster(fut, here("data/gHM/disturbance_future_2075.tif"), overwrite=TRUE)
 
 a <- values(ghm); b <- values(fut); k <- !is.na(a) & !is.na(b)
 cat(sprintf("present mean %.3f -> future mean %.3f\n", mean(a[k]), mean(b[k])))
