@@ -45,14 +45,6 @@ SDM_DIR = V2_DIR / "present_habitat_suitability"
 ENV_DIR = V2_DIR / "environmental_layers"
 TRAIT_FILE = V2_DIR / "species_traits.csv"
 
-RESULTS_DIR = Path(
-    os.environ.get(
-        "RESULTS_DIR",
-        Path(__file__).resolve().parent.parent / "outputs" / "captain3_seed8052026",
-    )
-)
-MASK_FILE = RESULTS_DIR / "aoh_union_mask.npy"
-
 # Disturbance drives carrying capacity. Two layers are available and they are
 # NOT interchangeable in every role:
 #   disturbance.tif      categorical LULC-derived, 4 unique values, 26,569 cells
@@ -86,6 +78,18 @@ FUTURE_DISTURBANCE_FILE = os.environ.get("FUTURE_DISTURBANCE_FILE", "")
 # ES noise stream -- i.e. exactly the sources of run-to-run variation the v2
 # seed sweep was probing.
 SEED = int(os.environ.get("SEED", 8052026))
+
+# Where this run writes. Defaults to a folder named after the seed actually in
+# use, so results can never end up in a folder labelled with a different one.
+# The shell scripts set RESULTS_DIR explicitly and override this.
+RESULTS_DIR = Path(
+    os.environ.get(
+        "RESULTS_DIR",
+        Path(__file__).resolve().parent.parent / "outputs" / f"captain_seed{SEED}",
+    )
+)
+MASK_FILE = RESULTS_DIR / "aoh_union_mask.npy"
+
 N_TIME_STEPS = 30               # [general] steps
 N_EPOCHS = int(os.environ.get("N_EPOCHS", 100))   # [general] epochs
 # v2's batch_size = 3 does NOT carry over: v3 estimates both the NES gradient
