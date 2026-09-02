@@ -18,7 +18,7 @@ history -- so that ensemble cannot be reconstructed post hoc. The continuous
 policy score is used instead: it is what the selection is actually ranked on,
 and needs no arbitrary perturbation scale.
 
-    python scripts/captain3_ugf_predict.py
+    python scripts/captain_predict.py
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ import torch
 
 import captain as cn
 
-from captain3_ugf_seed8052026 import (  # noqa: E402
+from captain_train import (  # noqa: E402
     RESULTS_DIR,
     SEED,
     N_TIME_STEPS,

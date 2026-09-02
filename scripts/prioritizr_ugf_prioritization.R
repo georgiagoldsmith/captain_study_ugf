@@ -1,6 +1,6 @@
 # Conservation prioritisation for the Upper Guinean Forest, on a 3km grid.
 #
-#   Rscript scripts/prioritzr_ghm_discount_3km.R
+#   Rscript scripts/prioritizr_ugf_prioritization.R
 #
 # Chooses roughly 30% of the study area to protect: the cells that best cover
 # 18 bird species' habitat while steering away from land that is already
@@ -161,6 +161,19 @@ stamp(sprintf("raw AOH cell-sum %.0f -> discounted %.0f",
       sum(global(species_stack_norm, "sum", na.rm = TRUE)$sum),
       sum(global(species_stack_eff, "sum", na.rm = TRUE)$sum)))
 
+# ---- save the layers ----
+# Write the 3km layers out so they can be looked at, or reused, without
+# re-running the whole script.
+LAYERS <- here("outputs/layers_3km")
+dir.create(LAYERS, recursive = TRUE, showWarnings = FALSE)
+writeRaster(cocoa_norm,           file.path(LAYERS, "cocoa.tif"),             overwrite = TRUE)
+writeRaster(ghm_pen,              file.path(LAYERS, "ghm.tif"),               overwrite = TRUE)
+writeRaster(protected_areas_rast, file.path(LAYERS, "protected_areas.tif"),   overwrite = TRUE)
+writeRaster(urban_not_protected,  file.path(LAYERS, "urban_locked_out.tif"),  overwrite = TRUE)
+writeRaster(cost_uniform,         file.path(LAYERS, "planning_units.tif"),    overwrite = TRUE)
+writeRaster(species_stack_eff,    file.path(LAYERS, "species_discounted.tif"), overwrite = TRUE)
+stamp(sprintf("layers written to %s", LAYERS))
+
 # ---- targets and weights ----
 # Every species needs half its habitat covered. Shortfalls are weighted by IUCN
 # category, so missing the target for a critically endangered species costs 64x
@@ -174,47 +187,46 @@ weights_iucn <- captain_iucn_weight[as.character(
 stopifnot(!anyNA(weights_iucn))
 
 
-# ---- the problem ----
-# Same formulation throughout; the only thing that varies is how hard cocoa is
-# charged for. Built as a function so the calibration solve below and the real
-# solve are guaranteed identical apart from that penalty.
-build_p <- function(pen_cocoa) {
-  p <- problem(cost_uniform, features = species_stack_eff) |>
-    add_min_shortfall_objective(budget) |>
-    add_relative_targets(species_targets_2) |>
-    add_feature_weights(weights_iucn)
-  if (pen_cocoa > 0) p <- p |> add_linear_penalties(penalty = pen_cocoa, data = cocoa_pen)
-  p |>
-    add_locked_out_constraints(urban_not_protected) |>
-    add_locked_in_constraints(protected_areas_rast) |>
-    add_binary_decisions() |>
-    add_gurobi_solver(gap = 0.001, verbose = FALSE)
-}
+# ---- calibrating the cocoa penalty ----
+# The penalty is set as a share of the shortfall you would get without the cocoa
+# penalty. This step builds the problem without the cocoa penalty, solves it, 
+# and records its shortfall and how much suitable cocoa land it selects.
+p0 <- problem(cost_uniform, features = species_stack_eff) |>
+  add_min_shortfall_objective(budget) |>
+  add_relative_targets(species_targets_2) |>
+  add_feature_weights(weights_iucn) |>
+  add_locked_out_constraints(urban_not_protected) |>
+  add_locked_in_constraints(protected_areas_rast) |>
+  add_binary_decisions() |>
+  add_gurobi_solver(gap = 0.001, verbose = FALSE)
+
 weighted_shortfall <- function(p, s) sum(weights_iucn * eval_target_coverage_summary(p, s)$relative_shortfall)
 
-# ---- calibration solve: discount on, cocoa not charged for ----
-# Only purpose is to measure what the answer looks like when cocoa is free:
-# the weighted shortfall, and how much cocoa land that solution takes. The
-# penalty below is scaled against both.
-p0 <- build_p(0)
 s0 <- solve(p0)
 obj0   <- weighted_shortfall(p0, s0)
 cocoa0 <- global(cocoa_pen * s0, "sum", na.rm = TRUE)$sum
 stamp(sprintf("calibration: shortfall %.3f | cells %d | sum(cocoa) %.1f",
       obj0, global(s0, "sum", na.rm = TRUE)$sum, cocoa0))
 
-# ---- the cocoa penalty ----
-# How hard to charge for cocoa suitability, as the share of baseline shortfall
-# worth giving up to avoid cocoa land. 0.5 sits at the elbow of that trade-off
-# -- past it, each further unit of coverage given up buys much less cocoa
-# avoided. Computed from the calibration solve, so it stays meaningful if the
-# grid, cocoa layer, species set or budget changes.
+# Share of that baseline shortfall worth giving up to avoid cocoa land. Past
+# 0.5, each further unit of coverage given up buys much less cocoa avoided.
 COCOA_SHARE   <- 0.5
 COCOA_PENALTY <- COCOA_SHARE * obj0 / cocoa0
 stamp(sprintf("cocoa penalty: share %.2f -> %.6g", COCOA_SHARE, COCOA_PENALTY))
 
-# ---- the real solve ----
-p <- build_p(COCOA_PENALTY)
+# ---- UGF prioritization problem ----
+# The full problem, identical to the calibration problem above except for the
+# add_linear_penalties() line.
+p <- problem(cost_uniform, features = species_stack_eff) |>
+  add_min_shortfall_objective(budget) |>
+  add_relative_targets(species_targets_2) |>
+  add_feature_weights(weights_iucn) |>
+  add_linear_penalties(penalty = COCOA_PENALTY, data = cocoa_pen) |>
+  add_locked_out_constraints(urban_not_protected) |>
+  add_locked_in_constraints(protected_areas_rast) |>
+  add_binary_decisions() |>
+  add_gurobi_solver(gap = 0.001, verbose = FALSE)
+
 s_gd <- solve(p)
 writeRaster(s_gd, here("outputs/prioritizr_p3a_ghm_discount_3km.tif"), overwrite = TRUE)
 
@@ -228,10 +240,9 @@ cat(sprintf("mean gHM   in selected cells %.4f (region-wide %.4f)\n",
     global(ghm_pen * s_gd, "sum", na.rm = TRUE)$sum / n_sel,
     global(ghm_pen, "mean", na.rm = TRUE)$mean))
 
-# ---- how much of each species' habitat did we capture? ----
-# Two views. Raw counts every habitat cell equally; quality-weighted counts
-# each cell by (1 - gHM), which is what the discount was optimising for, so a
-# species can look worse on raw and better on quality-weighted.
+# ---- how much of each species' habitat was captured? ----
+# 1) Raw: counts every habitat cell equally.
+# 2) Quality-weighted: counts each cell by (1 - gHM).
 q <- 1 - ghm_pen
 coverage <- do.call(rbind, lapply(1:nlyr(species_stack_norm), function(i) {
   a <- !is.na(species_stack_norm[[i]])
@@ -259,12 +270,8 @@ stamp("solve stage complete")
 ############################################################################
 # FIGURE
 ############################################################################
-# Map of the solution. Everything needed is still in memory from the solve
-# above, so nothing is re-read from disk. The cost of that is that restyling
-# means re-running the solve; if that becomes tiresome, comment out the solve
-# section and read the tif in outputs/ back in instead.
-#
-# Colours match the CAPTAIN figures so the two sets can sit side by side:
+# Map of the solution. Colors match the CAPTAIN figures so the two sets can be
+# compared side by side:
 #   grey = not selected, blue = newly selected, dark grey = protected area
 
 RES <- 150
@@ -273,10 +280,6 @@ MAR_SIDE <- 3.1
 MAR_TOP <- 8.4
 TITLE_LINE <- 5.6           # gap between map and title, in margin lines
 
-# terra centres a raster in its panel and keeps its aspect ratio, so a panel
-# taller than the map leaves white bands above and below that no margin setting
-# will close. Size the panel to the map instead. The aspect has to come from
-# the extent rather than the cell counts, because these cells are not square.
 fig_geom <- function(r, width = 2200, legend_px = 95) {
   e <- ext(r)
   asp <- (e$xmax - e$xmin) / (e$ymax - e$ymin)
@@ -285,9 +288,7 @@ fig_geom <- function(r, width = 2200, legend_px = 95) {
   list(width = width, height = round(panel_h + legend_px), heights = c(panel_h, legend_px))
 }
 
-# 0 not selected, 1 newly selected, 2 already protected. Protected areas are
-# tested first so they get their own colour: they are all "selected", but they
-# were locked in from the start rather than chosen.
+# 0 not selected, 1 newly selected, 2 already protected
 sel_class <- mask(ifel(protected_areas_rast == 1, 2, ifel(s_gd == 1, 1, 0)), s_gd)
 sol_cols <- c("grey92", "#1f78b4", "grey40")
 

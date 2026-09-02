@@ -5,9 +5,9 @@ library(here)
 library(tidyverse)
 library(sf)
 
-###################################################################
-
-# Assign IUCN status to UGF birds
+###############################################################################
+# --- Assign IUCN status to UGF birds ---
+###############################################################################
 
 Sys.setenv(IUCN_REDLIST_KEY = "EXJCZgc5cxkksBJ9fqKHnR6aEqqugamF8ZrK") 
 
@@ -26,7 +26,7 @@ if (file.exists(checkpoint_path)) {
   birds$population_trend <- NA
 }
 
-# Main loop 
+# --- Main loop ---
 for (i in seq_len(nrow(birds))) {
   
   # Skip rows already filled (allows safe resume)
@@ -90,11 +90,11 @@ for (i in seq_len(nrow(birds))) {
   }
 }
 
-# Final save 
+# --- Final save ---
 write.csv(birds, "birds_species_status.csv", row.names = FALSE)
 cat("Done! Results saved to birds_species_status.csv\n")
 
-# Check how many were matched 
+# --- Check how many were matched ---
 cat("IUCN status assigned:", sum(!is.na(birds$IUCN)), "of", nrow(birds), "species\n")
 missing <- birds[is.na(birds$IUCN), "scientific_name"]
 if (length(missing) > 0) {
@@ -102,50 +102,35 @@ if (length(missing) > 0) {
   print(missing)
 }
 
-install.packages("writexl")
 library(writexl)
 
 write_xlsx(birds, here("outputs/bird_species_status.xlsx"))
 
-api_key <- "EXJCZgc5cxkksBJ9fqKHnR6aEqqugamF8ZrK"
+# used by the synonym lookups below; same key source as the main loop above
+api_key <- Sys.getenv("IUCN_REDLIST_KEY")
 
-rl_version(key = api_key)
-rl_species("Accipiter", "badius", key = api_key)
-
-# test
-rl_threats("Accipiter", "badius", key = api_key)
-
-################################################################################################
-
-# AOH list
-
+###############################################################################
+# --- AOH list ---
+###############################################################################
 
 library(readr)
 
 birds_ugf <- read_csv(here("data/Birds w species status/birds_species_status.csv"))
 aoh_list <- read_csv(here("data/birds_aoh/Birds_list_AOH.csv"))
 
-# check what columns are available
-names(aoh_list)
-names(birds_ugf)
-
 # check what orders are present
-unique(aoh_list$order)  # column name may differ, check names() first
 
 # join birds in the AOH list to the list of CI SDMs w IUCN status 
 matched <- birds_ugf |>
   inner_join(aoh_list, by = c("scientific_name" = "BINOMIAL"))  
 
-# how many matched
-nrow(matched)
+cat("matched to an AOH raster:", nrow(matched), "species\n")
 
 # which didn't match
 unmatched <- birds |>
   anti_join(aoh_list, by = c("scientific_name" = "BINOMIAL"))
 
-nrow(unmatched)
-
-unmatched$scientific_name
+cat("unmatched:", nrow(unmatched), "species\n")
 
 # check for different names
 iucn_lookup <- lapply(1:nrow(unmatched), function(i) {
@@ -244,10 +229,9 @@ matched |>
   arrange(Order_, is.migratory) |>
   print( n = Inf)
 
-#################################################################################################################
-
-# Extract AOH rasters
-
+###############################################################################
+# --- Extract AOH rasters ---
+###############################################################################
 
 library(terra)
 
@@ -297,10 +281,9 @@ for (folder in folders) {
   )
 }
 
-###################################################################################################
-
-# % habitat in UGF
-
+###############################################################################
+# --- % habitat in UGF ---
+###############################################################################
 
 ## folder the extracted rasters are
 accipiter_badius_aoh <- rast(here("data/birds_aoh/extracted/Accipiter_badius_R.tif"))
@@ -393,300 +376,4 @@ aoh_table |>
 
 
 length(list.files(here("data/birds_aoh/clipped")))
-
-##############################################################################
-
-# Get threats for all species in birds_star
-
-
-
-# get assessment ID for a species first
-assessment <- rl_species("Accipiter", "badius", key = api_key)
-assessment_id <- assessment$assessments$assessment_id[1]  # get latest
-
-# then get threats for that assessment
-rl_assessment(assessment_id, key = api_key)
-
-# pull threats for all birds_star species
-threat_list <- list()
-
-for (i in 1:nrow(birds_star)) {
-  sp <- birds_star$scientific_name[i]
-  genus <- word(sp, 1)
-  species <- word(sp, 2)
-  
-  result <- tryCatch({
-    assessment <- rl_species(genus, species, key = api_key)
-    
-    # get latest global assessment id
-    assessment_id <- assessment$assessments$assessment_id[
-      assessment$assessments$latest == TRUE
-    ][1]
-    
-    threats <- rl_assessment(assessment_id, key = api_key)$threats
-    if (!is.null(threats) && nrow(threats) > 0) {
-      threats$scientific_name <- sp
-      threats
-    } else NULL
-  }, error = function(e) NULL)
-  
-  threat_list[[i]] <- result
-  Sys.sleep(0.5)
-  cat("Done", i, "of", nrow(birds_star), ":", sp, "\n")
-}
-
-threats_df <- bind_rows(threat_list)
-
-names(threats_df)
-head(threats_df)
-
-# check for species missing threat data
-birds_star |>
-  filter(!scientific_name %in% threats_df$scientific_name) |>
-  select(scientific_name, IUCN)
-
-unique(threats_df$scope)
-unique(threats_df$severity)
-
-# values from STAR Supplementary Table 2
-decline_lookup <- data.frame(
-  scope = c(
-    rep("Whole (>90%)", 6),
-    rep("Majority (50-90%)", 6),
-    rep("Minority (<50%)", 6)
-  ),
-  severity = rep(c(
-    "Very Rapid Declines",
-    "Rapid Declines", 
-    "Slow, Significant Declines",
-    "Negligible declines",
-    "No decline",
-    "Causing/Could cause fluctuations"
-  ), 3),
-  decline = c(
-    63, 24, 10, 1, 0, 10,  # Whole
-    52, 18,  9, 0, 0,  9,  # Majority
-    24,  7,  5, 0, 0,  5   # Minority
-  )
-)
-
-# join to threats_df
-threats_df <- threats_df |>
-  select(-any_of(c("decline", "C", "scope_num", "severity_num"))) |>
-  left_join(decline_lookup, by = c("scope", "severity")) |>
-  filter(timing != "Past, Unlikely to Return") |>
-  group_by(scientific_name) |>
-  mutate(
-    total_decline = sum(decline, na.rm = TRUE),
-    C = decline / total_decline
-  ) |>
-  ungroup()
-
-# which species are missing
-missing_threats <- birds_star |>
-  filter(!scientific_name %in% threats_df$scientific_name) |>
-  pull(scientific_name)
-
-length(missing_threats)
-head(missing_threats)
-
-threat_list <- list()
-
-for (i in seq_along(missing_threats)) {
-  sp <- missing_threats[i]
-  genus <- word(sp, 1)
-  species <- word(sp, 2)
-  
-  result <- tryCatch({
-    assessment <- rl_species(genus, species, key = api_key)
-    assessment_id <- assessment$assessments$assessment_id[
-      assessment$assessments$latest == TRUE
-    ][1]
-    
-    threats <- rl_assessment(assessment_id, key = api_key)$threats
-    if (!is.null(threats) && nrow(threats) > 0) {
-      threats$scientific_name <- sp
-      threats
-    } else NULL
-  }, error = function(e) NULL)
-  
-  threat_list[[i]] <- result
-  Sys.sleep(0.5)
-  cat("Done", i, "of", length(missing_threats), ":", sp, "\n")
-}
-
-new_threats <- bind_rows(threat_list)
-threats_df <- bind_rows(threats_df, new_threats)
-
-# Assign zero to threats with unknown severity 
-threats_df |> filter(is.na(decline)) |> count(scope, severity)
-
-threats_df <- threats_df |>
-  mutate(decline = replace_na(decline, 0)) |>
-  group_by(scientific_name) |>
-  mutate(
-    total_decline = sum(decline, na.rm = TRUE),
-    C = ifelse(total_decline == 0, 0, decline / total_decline)
-  ) |>
-  ungroup()
-
-# save immediately
-write_csv(threats_df, here("outputs/threats_df.csv"))
-
-################################################################################
-
-# Calculating  STAR
-
-####################
-## IUCN score
-## join species status
-aoh_table <- aoh_table |>
-  left_join(birds_ugf |> select(scientific_name, IUCN, population_trend),
-            by = "scientific_name")
-
-
-## filter out birds with no overlap
-no_overlap_ugf <- aoh_table |>
-  filter(pct_aoh_in_ugf == 0)
-
-birds_aoh_ugf <- aoh_table |>
-  filter(pct_aoh_in_ugf > 0)
-
-# filter out birds of least concern
-birds_star <- aoh_table |>
-  filter(pct_aoh_in_ugf > 0) |>
-  filter(IUCN %in% c("NT", "VU", "EN", "CR"))
-
-# add weights for IUCN status
-birds_star <- birds_star |>
-  mutate(Ws = case_when(
-    IUCN == "NT" ~ 1,
-    IUCN == "VU" ~ 2,
-    IUCN == "EN" ~ 3,
-    IUCN == "CR" ~ 4,
-  ))
-
-###############
-## Threat score
-## join threat data to birds_star
-star_data <- threats_df |>
-  left_join(birds_star |> select(scientific_name, pct_aoh_in_ugf, Ws),
-            by = "scientific_name")
-
-###############
-## STAR-T
-## calculate STAR-T per species per threat
-star_data <- star_data |>
-  mutate(
-    star_t = (pct_aoh_in_ugf / 100) * Ws * C
-  )
-
-## total STAR-T for UGF by threat
-star_by_threat <- star_data |>
-  group_by(description$en, code) |>
-  summarise(star_t = sum(star_t, na.rm = TRUE)) |>
-  arrange(desc(star_t))
-star_by_threat |>
-  arrange(desc(star_t)) |>
-  print(n = Inf)
-
-# total STAR-T for UGF overall
-total_star_t <- sum(star_by_threat$star_t)
-total_star_t
-
-birds_star <- star_data |>
-  group_by(scientific_name) |>
-  summarise(star_t = sum(star_t, na.rm = TRUE)) |>
-  left_join(birds_star |> select(-any_of("star_t")), by = "scientific_name") |>
-  mutate(star_t = round(star_t, 6))
-
-write.csv(birds_star, here("outputs/birds_star_t.csv"))
-
-################################################################################
-#some checks
-# species with no UGF overlap
-no_overlap <- aoh_table |>
-  filter(ugf_aoh_km2 == 0) |>
-  left_join(matched |> select(scientific_name, Order_, is.migratory),
-            by = "scientific_name")
-
-no_overlap |> select(scientific_name, Order_, is.migratory)
-not_yet <- matched |>
-  filter(!scientific_name %in% aoh_table$scientific_name) |>
-  left_join(matched |> select(scientific_name, Order_, is.migratory),
-            by = "scientific_name")
-
-not_yet |>
-  filter(Order_.x == "ANSERIFORMES")
-
-length(unique(aoh_table$scientific_name))
-
-# which matched species are still missing
-matched |>
-  filter(!scientific_name %in% aoh_table$scientific_name) |>
-  nrow()
-
-# duplicates?
-sum(duplicated(aoh_table$scientific_name))
-
-# species in aoh_table with ugf_aoh_km2 > 0
-aoh_table |>
-  filter(ugf_aoh_km2 > 0) |>
-  nrow()
-
-# check for NAs in ugf_aoh_km2
-sum(is.na(aoh_table$ugf_aoh_km2))
-
-# see the range of values
-summary(aoh_table$ugf_aoh_km2)
-
-# species with ugf_aoh_km2 = 0
-aoh_table |>
-  filter(ugf_aoh_km2 == 0) |>
-  nrow()
-
-
-
-
-
-
-
-# how many unique species in threats_df
-length(unique(threats_df$scientific_name))
-
-# which birds_star species are missing from threats_df
-birds_star |>
-  filter(!scientific_name %in% threats_df$scientific_name) |>
-  select(scientific_name, IUCN)
-
-
-
-
-
-summary(birds_star_t$pct_aoh_in_ugf)
-
-birds_star_t <- birds_star_t |>
-  select(-any_of(c("star_t.x", "star_t.y"))) |>
-  mutate(star_t = (pct_aoh_in_ugf / 100) * Ws)
-
-birds_star_t |> 
-  select(scientific_name, IUCN, pct_aoh_in_ugf, Ws, star_t) |> 
-  arrange(desc(star_t))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

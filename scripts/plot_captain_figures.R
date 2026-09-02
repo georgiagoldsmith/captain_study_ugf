@@ -1,18 +1,8 @@
-# All CAPTAIN 3 figures for the corrected 3km build, seed 232373165.
-#
-#   Rscript scripts/plot_captain3_figures.R                    # all five
-#   Rscript scripts/plot_captain3_figures.R present staged     # named subset
-#
-# Merged from plot_best_solution.R, plot_future_solution.R,
-# plot_future_vs_static.R, plot_staged_vs_future.R and plot_disturbance_delta.R.
-# All five opened with the same preamble and repeated the same png/layout/
-# legend/dev.off skeleton; the two map shapes are now plot_solution() and
-# plot_pair(). Output filenames are unchanged.
-#
-# Cell counts and IoUs are COMPUTED here. In the original scripts two of them
-# were typed into the labels as string literals -- "Newly selected (4,827)",
-# "dropped (182)", "IoU = 0.93" -- which went stale silently whenever a run was
-# redone. Only plot_staged_vs_future.R derived its own numbers.
+# Plot CAPTAIN 3 solution
+# G Goldsmith 
+# August 2026
+###############################################################################
+
 suppressMessages({library(here);library(terra);library(sf)})
 
 DD   <- "/Users/georgiagoldsmith/Documents/Bren/CI-internship/captain_testing/captain2-main/ugf_data_3km_corrected/environmental_layers"
@@ -34,7 +24,7 @@ grid_of <- function(d) as.matrix(read.csv(here(d,"selected_grid.csv"), header=FA
 new_of  <- function(d) (grid_of(d) > 0) & (pa != 1)
 as_rast <- function(m) mask(rast(m, extent=ext(co), crs=crs(co)), co)
 
-# --- one solution on its own ------------------------------------------------
+# --- one solution on its own ---
 # 0 not selected, 1 newly selected, 2 pre-existing protected area. PAs are
 # tested FIRST so they read as their own class -- they are all selected, being
 # locked in, but they are not something the model chose.
@@ -56,7 +46,7 @@ plot_solution <- function(run, outfile, title_text) {
   invisible(n)
 }
 
-# --- two solutions compared -------------------------------------------------
+# --- two solutions compared ---
 # 0 neither, 1 A only, 2 B only, 3 both, 4 locked-in protected area.
 # title_fmt takes one %.2f, the IoU over new selections.
 plot_pair <- function(run_a, run_b, outfile, title_fmt, lab_a, lab_b) {

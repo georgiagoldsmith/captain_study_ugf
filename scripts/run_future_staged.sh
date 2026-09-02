@@ -19,6 +19,6 @@ export CELLS_PER_STEP=161          # (13201 - 8374 locked-in PAs) / 30 steps
 export HIDDEN_DIM=16,8
 export RESULTS_DIR="$PROJ/outputs/captain3_seed232373165_corrected_future_staged"
 
-"$PY" scripts/captain3_ugf_seed8052026.py || { echo "TRAIN FAILED"; exit 1; }
-"$PY" scripts/captain3_ugf_predict.py     || { echo "PREDICT FAILED"; exit 1; }
+"$PY" scripts/captain_train.py   || { echo "TRAIN FAILED"; exit 1; }
+"$PY" scripts/captain_predict.py || { echo "PREDICT FAILED"; exit 1; }
 echo "STAGED RUN DONE"

@@ -6,7 +6,7 @@ config_predict_prioritization_9_seed8052026.txt as closely as the v3 preview
 allows. Points at the existing captain2-main/ugf_data tree -- no data is copied.
 
 Run with the captain3preview environment:
-    uv run python captain3_ugf_seed8052026.py
+    uv run python captain_train.py
 
 Grid facts (computed from the rasters, for reference):
     raster                235 x 578 = 135,830 cells
@@ -116,11 +116,6 @@ DISPERSAL_WINDOW = int(os.environ.get("DISPERSAL_WINDOW", 3))   # in CELLS, not 
 SCALAR_DISPERSAL = os.environ.get("SCALAR_DISPERSAL", "0") == "1"
 MEAN_DISPERSAL_RATE = 1.0       # [species_settings] mean_dispersal_rate
 REWARD_WEIGHTS = np.array([0.7, 0.3])   # species_risk, cost (carbon weight was 0)
-# Optional third term: spatial compactness, as in Horn et al. 2026
-# (rewards_variables = species_risk connectivity cost). v3 ships no connectivity
-# reward, so it comes from scripts/captain3_connectivity_reward.py. 0 disables it
-# and leaves the reward vector exactly as before.
-CONNECTIVITY_WEIGHT = float(os.environ.get("CONNECTIVITY_WEIGHT", 0.0))
 # [policy] nn_nodes = 3 2. That default is very tight: 13 features squeezed through
 # 3 then 2 ReLU units, 53 parameters. Measured consequence -- in a degenerate run
 # every hidden unit dies for 78% of cells, so 10,437 distinct cells collapse onto
@@ -281,20 +276,7 @@ def create_episode_runner() -> cn.EpisodeRunner:
         cn.CalcRewardExtRisk(threat_weights=THREAT_WEIGHTS, device=DEVICE),
         cn.CalcRewardPersistentCost(rescaler=float(1.0 / costs.data.sum())),
     ]
-    weights = REWARD_WEIGHTS
-    if CONNECTIVITY_WEIGHT > 0:
-        from captain3_connectivity_reward import CalcRewardConnectivity
-
-        # Protection is one-shot, so the per-step score is constant and the
-        # episode total is n_steps x it. Rescale by 1/n_steps so the term lands
-        # on the same order as extinction risk (~13) and cost (~-9) rather than
-        # 30x larger, and let CONNECTIVITY_WEIGHT express the actual preference.
-        reward_objs.append(
-            CalcRewardConnectivity(env, rescaler=10.0 / N_TIME_STEPS)
-        )
-        weights = np.append(REWARD_WEIGHTS, CONNECTIVITY_WEIGHT)
-
-    rewards = cn.Rewards(reward_obj_list=reward_objs, reward_weights=weights)
+    rewards = cn.Rewards(reward_obj_list=reward_objs, reward_weights=REWARD_WEIGHTS)
 
     budget_manager = cn.GlobalBudgetManager(
         total_target=TOTAL_TARGET_CELLS,

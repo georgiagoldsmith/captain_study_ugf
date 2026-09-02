@@ -1,26 +1,26 @@
-# Characteristics of the cells a solution selected: mean cost, mean present and
-# 2075 disturbance, and mean species richness per cell split by IUCN class.
+# PrioritizR & CAPTAIN solution characteristics
+# --------------------------------------------------
+
+#   Rscript scripts/compare_characteristics_captain_prioritizr.R               # standard table
+#   Rscript scripts/compare_characteristics_captain_prioritizr.R <run_dir> ...  # runs you name
+
+# One row per version, with the average cost, disturbance now, future 
+# disturbance, and number of species per cell broken down by IUCN category. 
+# Builds the comparison table: three CAPTAIN variants plus prioritizr.
 #
-#   Rscript scripts/run_characteristics.R                     # standard table:
-#                                                             # 3 CAPTAIN variants
-#                                                             # + prioritizr
-#   Rscript scripts/run_characteristics.R <run_dir> [<run_dir> ...]
+# Species counts are how many species of each category actually live in an
+# average chosen cell, counting a species as present where its habitat
+# suitability is 0.5 or higher.
 #
-# Merged from run_characteristics.R and run_characteristics_with_prioritizr.R.
-# Those two shared their entire setup, inputs and column definitions and
-# differed only in which rows they built, so the difference is now the argument
-# list rather than a second file. Both output filenames are unchanged.
+# Only newly chosen cells are counted. Protected areas are locked in, so 
+# including them would inflate agreement.
 #
-# Richness is PRESENT-DAY occupancy (SDM >= MIN_SUITABILITY 0.5), i.e. how many
-# species of each class actually live in an average selected cell -- not the
-# fractional end-of-episode class totals in summary.txt, which are averages over
-# the 30 stochastic replicates and so carry decimals for a different reason.
-# Stats cover NEWLY selected cells only; the locked-in PAs are shared by every
-# run and would wash out the differences between them.
+# Reward comes from CAPTAIN's own training log. PrioritizR does not produce
+# a reward, so that cell is empty.
 #
-# reward is CAPTAIN-internal (final-epoch avg_reward from its RL training log).
-# prioritizr has no episode and no reward, so that cell is NA by construction,
-# not missing data.
+# A second table describes which cells the models disagreed on:what PrioritizR
+# picked that CAPTAIN did not, what CAPTAIN picked that PrioritizR did not, and
+# what they both picked. 
 suppressMessages({library(here); library(terra)})
 
 DD  <- "/Users/georgiagoldsmith/Documents/Bren/CI-internship/captain_testing/captain2-main/ugf_data_3km_corrected"
@@ -89,3 +89,24 @@ cat("\nspecies pool by class:", paste(sprintf("%s=%d", CLS,
 print(round(out, 3))
 write.csv(out, here(outfile))
 cat(sprintf("\nwritten: %s\n", outfile))
+
+# ---- second table: the cells the two models disagreed on ----
+# Same columns as above, but each row is a slice of one comparison rather than a
+# whole plan, so there is no reward to report.
+if (!length(args)) {
+  diff_rows <- list()
+  for (nm in names(captain_runs)) {
+    g <- as.matrix(read.csv(here(captain_runs[[nm]], "selected_grid.csv"), header = FALSE))
+    cap_new <- g > 0 & pa != 1
+    pz_new  <- pz > 0 & pa != 1
+    diff_rows[[paste0(nm, "  >> PrioritizR only")]] <- metrics(pz_new & !cap_new, NA_real_)
+    diff_rows[[paste0(nm, "  >> CAPTAIN only")]]    <- metrics(cap_new & !pz_new, NA_real_)
+    diff_rows[[paste0(nm, "  >> both")]]            <- metrics(pz_new & cap_new,  NA_real_)
+  }
+  t2 <- do.call(rbind, diff_rows)
+  t2 <- t2[, colnames(t2) != "reward"]
+  cat("\n=== characteristics of the agreement / disagreement cells ===\n")
+  print(round(t2, 3))
+  write.csv(t2, here("outputs/prioritzr_captain3_disagreement_characteristics.csv"))
+  cat("\nwritten: outputs/prioritzr_captain3_disagreement_characteristics.csv\n")
+}

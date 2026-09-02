@@ -1,17 +1,18 @@
-# Cross-seed summaries of the corrected 3km sweep: contact sheet, 10-policy
-# selection frequency, and top-3 agreement.
+# Cross-seed comparison of CAPTAIN solutions
+# ------------------------------------------
+
+#   Rscript scripts/captain_seed_comparison.R                  # all three
+#   Rscript scripts/captain_seed_comparison.R frequency top3   # named subset
+
+# CAPTAIN was trained 10 times with different random seeds, so there are 10
+# different plans. This compares them, three ways:
 #
-#   Rscript scripts/captain3_seed_summary.R                  # all three
-#   Rscript scripts/captain3_seed_summary.R frequency top3   # named subset
+#   grid       every plan side by side, one small map each
+#   frequency  one map, each cell colored by how many of the 10 plans chose it
+#   top3       the same, for the three best-scoring plans only
 #
-# Merged from captain3_seed_grid_corrected.R,
-# captain3_selection_frequency_corrected.R and captain3_top3_agreement.R.
-# All three re-declared the SEEDS vector and repeated the same "read
-# selected_grid.csv, drop the locked-in PAs, accumulate" loop -- adding a seed
-# to the sweep used to mean editing three files. Output filenames unchanged.
-#
-# Locked-in protected areas are held out of every count below: each policy
-# contains them by construction, so including them would swamp the gradients.
+# Protected areas are left out of every count. Every plan contains them because
+# they are locked in, so counting them would overstate likeness in solutions.
 suppressMessages({library(here);library(terra);library(sf)})
 
 DD    <- "/Users/georgiagoldsmith/Documents/Bren/CI-internship/captain_testing/captain2-main/ugf_data_3km_corrected"

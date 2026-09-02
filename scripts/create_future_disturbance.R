@@ -1,19 +1,16 @@
-# Future (2075) disturbance in gHM units, for whichever build DATA_DIR points at.
-#
+# Calculating future (2075) disturbance in gHM units
+# --------------------------------------------------
+
 #   Rscript scripts/export_future_disturbance.R            # 3km corrected (default)
 #   DATA_DIR=.../ugf_data_1km Rscript scripts/export_future_disturbance.R
-#
+
 # There is no future gHM product, so the SSP4-RCP3.4 LULC classes are calibrated
 # against present-day gHM (median gHM of each 2020 class) and the class-to-class
-# CHANGE is applied to the observed present gHM:
-#
+# change is applied to the observed present gHM:
 #   future = present_gHM + (median[class_2075] - median[class_2020])
-#
-# Using the change rather than the level means a cell whose land cover does not
-# change gets zero delta, instead of being reset to its class median.
-# Urban and water in 2075 take the 1.0 exclusion sentinel, matching the present layer.
-# Rough by construction -- Grassland (n=11) and Barren (n=1) have almost no
-# present-day sample to calibrate from.
+
+# A cell whose land cover does not change gets zero delta.
+# Urban and water in 2075 take the 1.0 exclusion, matching the present layer.
 suppressMessages({library(here);library(terra);library(sf)})
 DD <- Sys.getenv("DATA_DIR",
   "/Users/georgiagoldsmith/Documents/Bren/CI-internship/captain_testing/captain2-main/ugf_data_3km_corrected")

@@ -3,10 +3,10 @@ library(here)
 library(ggplot2)
 library(terra)
 
-##################################
-# Protected Areas
-
-## load data
+###############################################################################
+# --- Protected Areas --- 
+###############################################################################
+# load data
 protected_areas_0 <- st_read(here("data/protected areas/WDPA_WDOECM_Jun2026_Public_AF_shp/WDPA_WDOECM_Jun2026_Public_AF_shp_0", "WDPA_WDOECM_Jun2026_Public_AF_shp-polygons.shp"))
 
 protected_areas_1 <- st_read(here("data/protected areas/WDPA_WDOECM_Jun2026_Public_AF_shp/WDPA_WDOECM_Jun2026_Public_AF_shp_1", "WDPA_WDOECM_Jun2026_Public_AF_shp-polygons.shp"))
@@ -15,17 +15,17 @@ protected_areas_2 <- st_read(here("data/protected areas/WDPA_WDOECM_Jun2026_Publ
 
 ugf_boundary <- st_read(here("data/UGF_gp.shp", "UGF_gp.shp"))
 
-## join protected areas
+# join protected areas
 protected_areas_ugf <- dplyr::bind_rows(
   protected_areas_0,
   protected_areas_1,
   protected_areas_2)
 
-## clip
+# clip
 protected_areas_ugf <- st_transform(protected_areas_ugf, st_crs(ugf_boundary))
 protected_areas_ugf <- st_intersection(protected_areas_ugf, ugf_boundary)
 
-## remove UNESCO-MAB Biosphere Reserve
+# remove UNESCO-MAB Biosphere Reserve
 
 protected_areas_ugf <- st_read("data/protected areas/protected_areas_ugf.shp")
 protected_areas_ugf <- protected_areas_ugf %>%
@@ -37,8 +37,8 @@ protected_areas_ugf <- st_make_valid(protected_areas_ugf)
 
 protected_areas_ugf <- st_collection_extract(protected_areas_ugf, "POLYGON")
 
-## plot -- styled to match the base-R terra maps (bold centered title sitting
-## just above the plot box, white background, no gridlines, black border)
+# plot -- styled to match the base-R terra maps (bold centered title sitting
+# just above the plot box, white background, no gridlines, black border)
 plot_pa_ugf <- ggplot() +
   geom_sf(data = protected_areas_ugf, aes(fill = DESIG), color = NA) +
   theme_bw() +
@@ -57,9 +57,10 @@ plot_pa_ugf
 st_write(protected_areas_ugf, here("data/protected areas/protected_areas_ugf.shp"), append = FALSE)
 
 (ggsave(here("outputs/protected_areas_ugf.png"), width = 17, height = 10, dpi = 300))
-##########################################################################
-#LC
 
+###############################################################################
+# --- LC ---
+###############################################################################
 library(terra)
 library(sf)
 
@@ -100,13 +101,11 @@ cropland_ugf <- ifel(is.na(lccs_ugf), NA, lccs_ugf %in% c(10, 11, 20))
 writeRaster(cropland_ugf, here("data/LC/cropland_ugf.tif"), overwrite = TRUE)
 plot(cropland_ugf)
 
-
-###############################################################
-
-# Cocoa crop suitability -> clipped to the UGF.
+###############################################################################
+# --- Cocoa crop suitability ---
+###############################################################################
 # This is the cocoa layer the analysis uses: cocoa_suitability_ugf.tif is
-# normalised into cost.tif by prioritzr_ghm_discount_3km.R and read from there
-# by the CAPTAIN export.
+# normalised into cost.tif by prioritizr_ugf_prioritization.R
 cocoa_suitability <- rast(here("data/cocoa suitability/cocoa_crop_suitability.tif"))
 cocoa_suitability <- project(cocoa_suitability, crs(ugf_boundary))
 
@@ -117,10 +116,9 @@ res(cocoa_suitability_ugf)
 
 writeRaster(cocoa_suitability_ugf, here("data/cocoa suitability/cocoa_suitability_ugf.tif"), overwrite = TRUE)
 
-###################################################################
-
-#Roads
-
+###############################################################################
+# --- Roads ---
+###############################################################################
 install.packages("osmdata")
 library(osmdata)
 
