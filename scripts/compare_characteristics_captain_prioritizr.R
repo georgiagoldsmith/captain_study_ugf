@@ -67,7 +67,7 @@ if (length(args)) {
     if (!file.exists(here(rd, "selected_grid.csv"))) { cat("missing:", rd, "\n"); next }
     rows[[rd]] <- captain_row(rd)
   }
-  outfile <- "outputs/run_characteristics.csv"
+  outfile <- "outputs/captain_run_characteristics.csv"
 } else {
   # ---- standard table: the three CAPTAIN variants, then the ILP ----
   captain_runs <- c(
@@ -76,13 +76,14 @@ if (length(args)) {
     "CAPTAIN (future + multi time step)" = "outputs/captain_seed232373165_future_staged")
   for (nm in names(captain_runs)) rows[[nm]] <- captain_row(captain_runs[[nm]])
 
-  pz <- as.matrix(rast(here("outputs/prioritizr_p3a_ghm_discount_3km.tif")), wide = TRUE)
+  pz <- as.matrix(rast(here("outputs/prioritizr/prioritizr_solution.tif")), wide = TRUE)
   pz[is.na(pz)] <- 0
   rows[["PrioritizR (gHM discount + cocoa penalty)"]] <- metrics(pz > 0 & pa != 1, NA_real_)
 
-  outfile <- "outputs/run_characteristics_with_prioritizr.csv"
+  outfile <- "outputs/comparison/prioritizr_captain_characteristics.csv"
 }
 
+dir.create(here("outputs/comparison"), recursive = TRUE, showWarnings = FALSE)
 out <- do.call(rbind, rows)
 cat("\nspecies pool by class:", paste(sprintf("%s=%d", CLS,
     vapply(CLS, function(k) sum(tr$conservation_status == which(CLS == k)), 0L)), collapse = "  "), "\n\n")
@@ -107,6 +108,6 @@ if (!length(args)) {
   t2 <- t2[, colnames(t2) != "reward"]
   cat("\n=== characteristics of the agreement / disagreement cells ===\n")
   print(round(t2, 3))
-  write.csv(t2, here("outputs/prioritizr_captain_disagreement_characteristics.csv"))
-  cat("\nwritten: outputs/prioritizr_captain_disagreement_characteristics.csv\n")
+  write.csv(t2, here("outputs/comparison/prioritizr_captain_disagreement_characteristics.csv"))
+  cat("\nwritten: outputs/comparison/prioritizr_captain_disagreement_characteristics.csv\n")
 }

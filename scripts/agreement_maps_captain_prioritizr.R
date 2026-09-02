@@ -27,7 +27,8 @@
 
 suppressMessages({library(here); library(terra); library(sf)})
 
-prz <- rast(here("outputs/prioritizr_p3a_ghm_discount_3km.tif"))
+dir.create(here("outputs/comparison"), recursive = TRUE, showWarnings = FALSE)
+prz <- rast(here("outputs/prioritizr/prioritizr_solution.tif"))
 ugf <- vect(st_transform(st_read(here("data/UGF_gp.shp", "UGF_gp.shp"), quiet = TRUE), 3857))
 pas <- rast(here("outputs/layers_3km/protected_areas.tif"))
 stopifnot(compareGeom(pas, prz, stopOnError = FALSE))
@@ -83,7 +84,7 @@ for (v in variants) {
   ncol_leg <- if (nchar(v$par) > 12) 2 else 4
   leg_h <- if (ncol_leg == 2) 1.6 else 1.15
 
-  png(here(sprintf("outputs/prioritizr_vs_captain_%s.png", v$tag)),
+  png(here(sprintf("outputs/comparison/prioritizr_vs_captain_%s.png", v$tag)),
       width = 2200, height = if (ncol_leg == 2) 1320 else 1250, res = 150)
   layout(matrix(1:2, nrow = 2), heights = c(6, leg_h))
   par(mar = c(0.2, 2.2, 6.5, 2.2))
@@ -99,11 +100,11 @@ for (v in variants) {
          legend = "Protected Areas (locked in)", fill = "grey40",
          ncol = 1, bty = "n", cex = 1.3, xpd = TRUE)
   dev.off()
-  writeRaster(cls, here(sprintf("outputs/prioritizr_vs_captain_%s.tif", v$tag)), overwrite = TRUE)
+  writeRaster(cls, here(sprintf("outputs/comparison/prioritizr_vs_captain_%s.tif", v$tag)), overwrite = TRUE)
 }
 
 t1 <- do.call(rbind, rows)
 cat("\n=== overlap on newly selected cells (protected areas excluded) ===\n")
 print(round(t1, 3))
-write.csv(t1, here("outputs/prioritizr_captain_agreement_table.csv"))
-cat("\nwritten: outputs/prioritizr_captain_agreement_table.csv\n")
+write.csv(t1, here("outputs/comparison/prioritizr_captain_agreement_table.csv"))
+cat("\nwritten: outputs/comparison/prioritizr_captain_agreement_table.csv\n")

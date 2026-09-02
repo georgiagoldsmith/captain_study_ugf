@@ -28,11 +28,12 @@
 # INPUTS   data/                    UGF boundary, cocoa suitability, gHM,
 #                                   protected areas, urban land cover, 18
 #                                   species habitat rasters, species traits
-#          captain/disturbance.tif  read for its grid geometry only
+#          data/captain/disturbance.tif  read for its grid geometry only
 #
-# OUTPUTS  outputs/prioritizr_p3a_ghm_discount_3km.tif  the solution
-#          outputs/p3a_ghm_discount_3km_coverage.csv    coverage by species
-#          outputs/solution_3a_ghm_discount_3km.png     map of the solution
+# OUTPUTS  all written to outputs/prioritizr/
+#            prioritizr_solution.tif           the solution
+#            prioritizr_species_coverage.csv   coverage by species
+#            prioritizr_solution.png           map of the solution
 library(here)
 library(terra)
 library(sf)
@@ -45,7 +46,7 @@ stamp <- function(msg) cat(sprintf("[%5.1fs] %s\n", as.numeric(difftime(Sys.time
 # Everything is built on the same 3km grid the CAPTAIN model outputs use, so
 # the two can be compared cell for cell. Only the geometry of disturbance.tif
 # is used, never its values. Note the cells are not square: 3001.4 x 2993.9 m.
-template <- rast(here("captain/disturbance.tif"))
+template <- rast(here("data/captain/disturbance.tif"))
 ugf_boundary <- st_read(here("data/UGF_gp.shp", "UGF_gp.shp"), quiet = TRUE)
 ugf_vect_3857 <- vect(st_transform(ugf_boundary, 3857))
 
@@ -228,7 +229,8 @@ p <- problem(cost_uniform, features = species_stack_eff) |>
   add_gurobi_solver(gap = 0.001, verbose = FALSE)
 
 s_gd <- solve(p)
-writeRaster(s_gd, here("outputs/prioritizr_p3a_ghm_discount_3km.tif"), overwrite = TRUE)
+dir.create(here("outputs/prioritizr"), recursive = TRUE, showWarnings = FALSE)
+writeRaster(s_gd, here("outputs/prioritizr/prioritizr_solution.tif"), overwrite = TRUE)
 
 n_sel <- global(s_gd, "sum", na.rm = TRUE)$sum
 stamp(sprintf("solved: %d cells (%.1f%% of area) | weighted shortfall %.3f",
@@ -255,7 +257,7 @@ coverage <- do.call(rbind, lapply(1:nlyr(species_stack_norm), function(i) {
 }))
 cat("\n=== AOH coverage, 3km ===\n")
 print(coverage[order(-coverage$iucn_weight, coverage$species), ], row.names = FALSE)
-write.csv(coverage, here("outputs/p3a_ghm_discount_3km_coverage.csv"), row.names = FALSE)
+write.csv(coverage, here("outputs/prioritizr/prioritizr_species_coverage.csv"), row.names = FALSE)
 
 big <- coverage[coverage$aoh_cells > 1000, ]
 cat("\nIUCN-weighted mean % AOH captured\n")
@@ -293,12 +295,12 @@ sel_class <- mask(ifel(protected_areas_rast == 1, 2, ifel(s_gd == 1, 1, 0)), s_g
 sol_cols <- c("grey92", "#1f78b4", "grey40")
 
 g <- fig_geom(sel_class, legend_px = 95)
-png(here("outputs/solution_3a_ghm_discount_3km.png"),
+png(here("outputs/prioritizr/prioritizr_solution.png"),
     width = g$width, height = g$height, res = RES)
 layout(matrix(c(1, 2), nrow = 2), heights = g$heights)
 par(mar = c(0, MAR_SIDE, MAR_TOP, MAR_SIDE))
 plot(sel_class, col = sol_cols, breaks = c(-0.5, 0.5, 1.5, 2.5), main = "", legend = FALSE)
-mtext("PrioritizR solution (gHM-discounted AOH + cocoa penalty, 3km)",
+mtext("PrioritizR solution",
       side = 3, line = TITLE_LINE, cex = 2.0, font = 2)
 par(mar = c(0, 0, 0, 0))
 plot.new()
