@@ -43,9 +43,9 @@ read_captain <- function(dir) {
 }
 
 variants <- list(
-  list(dir = "captain3_seed232373165_corrected",               par = "(simple)",                   tag = "simple"),
-  list(dir = "captain3_seed232373165_corrected_future",        par = "(future)",                   tag = "future"),
-  list(dir = "captain3_seed232373165_corrected_future_staged", par = "(future + multi time step)", tag = "future_staged")
+  list(dir = "captain_seed232373165_simple",       par = "(simple)",                   tag = "simple"),
+  list(dir = "captain_seed232373165_future",       par = "(future)",                   tag = "future"),
+  list(dir = "captain_seed232373165_future_staged", par = "(future + multi time step)", tag = "future_staged")
 )
 
 cols <- c("grey93", "#e66101", "#2c7bb6", "#1a9641", "grey40")
@@ -83,7 +83,7 @@ for (v in variants) {
   ncol_leg <- if (nchar(v$par) > 12) 2 else 4
   leg_h <- if (ncol_leg == 2) 1.6 else 1.15
 
-  png(here(sprintf("outputs/prioritzr_vs_captain3_%s.png", v$tag)),
+  png(here(sprintf("outputs/prioritizr_vs_captain_%s.png", v$tag)),
       width = 2200, height = if (ncol_leg == 2) 1320 else 1250, res = 150)
   layout(matrix(1:2, nrow = 2), heights = c(6, leg_h))
   par(mar = c(0.2, 2.2, 6.5, 2.2))
@@ -99,11 +99,11 @@ for (v in variants) {
          legend = "Protected Areas (locked in)", fill = "grey40",
          ncol = 1, bty = "n", cex = 1.3, xpd = TRUE)
   dev.off()
-  writeRaster(cls, here(sprintf("outputs/prioritzr_vs_captain3_%s.tif", v$tag)), overwrite = TRUE)
+  writeRaster(cls, here(sprintf("outputs/prioritizr_vs_captain_%s.tif", v$tag)), overwrite = TRUE)
 }
 
 t1 <- do.call(rbind, rows)
 cat("\n=== overlap on newly selected cells (protected areas excluded) ===\n")
 print(round(t1, 3))
-write.csv(t1, here("outputs/prioritzr_captain3_agreement_table.csv"))
-cat("\nwritten: outputs/prioritzr_captain3_agreement_table.csv\n")
+write.csv(t1, here("outputs/prioritizr_captain_agreement_table.csv"))
+cat("\nwritten: outputs/prioritizr_captain_agreement_table.csv\n")

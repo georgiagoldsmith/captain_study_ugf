@@ -17,7 +17,7 @@ suppressMessages({library(here);library(terra);library(sf)})
 
 DD    <- "/Users/georgiagoldsmith/Documents/Bren/CI-internship/captain_testing/captain2-main/ugf_data_3km_corrected"
 SEEDS <- c(42,675,12345,41898,176843,367181179,915315400,232373165,3245678920,8052026)
-run_dir <- function(s) paste0("outputs/captain3_seed", s, "_corrected")
+run_dir <- function(s) paste0("outputs/captain_seed", s, "_simple")
 
 b  <- vect(st_transform(st_read(here("data/UGF_gp.shp","UGF_gp.shp"),quiet=TRUE),3857))
 co <- mask(rast(file.path(DD,"environmental_layers","costs.tif")), b, touches=TRUE)
@@ -39,7 +39,7 @@ FIGS <- list(
 
   # 2 cols x 5 rows, matching the UGF's ~2.5:1 aspect ratio
   grid = function() {
-    png(here("outputs","captain3_seed_grid_corrected.png"), width=2200, height=1950, res=150)
+    png(here("outputs","captain_seed_grid.png"), width=2200, height=1950, res=150)
     layout(matrix(1:12, nrow=6, byrow=TRUE), heights=c(rep(1,5),0.34))
     for (i in seq_along(SEEDS)) {
       s <- SEEDS[i]
@@ -47,7 +47,7 @@ FIGS <- list(
       r <- as_rast(ifelse(pa == 1, 2, ifelse(grid_of(s) > 0, 1, 0)))
       par(mar=c(0.1,0.3,1.6,0.3))
       # NB panels are labelled by ORDINAL (1..10), not by seed value -- carried
-      # over from captain3_seed_grid_corrected.R unchanged. Swap `i` for `s`
+      # over from the original contact-sheet script unchanged. Swap `i` for `s`
       # below to label each panel with its actual seed.
       plot(r, col=c("grey92","#1f78b4","grey40"), breaks=c(-0.5,0.5,1.5,2.5),
            main=sprintf("Seed %d   reward %.3f   LC %.2f", i, as.numeric(f[3]), as.numeric(f[12])),
@@ -63,7 +63,7 @@ FIGS <- list(
   # each cell coloured by how many of the 10 policies selected it, 1..10
   frequency = function() {
     acc <- accumulate(SEEDS)
-    writeRaster(as_rast(acc), here("outputs","captain3_selection_frequency_corrected.tif"), overwrite=TRUE)
+    writeRaster(as_rast(acc), here("outputs","captain_selection_frequency.tif"), overwrite=TRUE)
 
     # display: PAs into a sentinel below zero so they read as their own flat class
     disp <- as_rast(ifelse(pa == 1, -1, acc))
@@ -71,7 +71,7 @@ FIGS <- list(
     cols <- c("grey40","grey93", grad)
     brks <- c(-1.5,-0.5, seq(0.5, 10.5, by=1))
 
-    png(here("outputs","captain3_selection_frequency_corrected.png"), width=2200, height=1250, res=150)
+    png(here("outputs","captain_selection_frequency.png"), width=2200, height=1250, res=150)
     # tighter legend panel, and a taller top margin so the title sits well clear of the map
     layout(matrix(1:2, nrow=2), heights=c(6,1.15))
     par(mar=c(0.2,2.2,6.5,2.2))
@@ -103,7 +103,7 @@ FIGS <- list(
         collapse=", "), "\n")
 
     acc <- accumulate(top3)
-    writeRaster(as_rast(acc), here("outputs","captain3_top3_agreement.tif"), overwrite=TRUE)
+    writeRaster(as_rast(acc), here("outputs","captain_top3_agreement.tif"), overwrite=TRUE)
 
     disp <- as_rast(ifelse(pa == 1, -1, acc))
     cols <- c("grey40","grey93","#fdd49e","#41b6c4","#0b3d91")     # PA, never, 1, 2, 3
@@ -114,7 +114,7 @@ FIGS <- list(
     # top-3 runs rather than the 4827 that used to be hardcoded here
     plan <- round(mean(vapply(top3, function(s) sum(new_of(s)), 0)))
 
-    png(here("outputs","captain3_top3_agreement.png"), width=2200, height=1250, res=150)
+    png(here("outputs","captain_top3_agreement.png"), width=2200, height=1250, res=150)
     layout(matrix(1:2, nrow=2), heights=c(6,1.15))
     par(mar=c(0.2,2.2,6.5,2.2))
     plot(disp, col=cols, breaks=brks, legend=FALSE, main="", axes=TRUE)

@@ -7,9 +7,9 @@ suppressMessages({library(here);library(terra);library(sf)})
 
 DD   <- "/Users/georgiagoldsmith/Documents/Bren/CI-internship/captain_testing/captain2-main/ugf_data_3km_corrected/environmental_layers"
 SEED <- 232373165
-RUN_PRESENT <- "outputs/captain3_seed232373165_corrected"
-RUN_FUTURE  <- "outputs/captain3_seed232373165_corrected_future"
-RUN_STAGED  <- "outputs/captain3_seed232373165_corrected_future_staged"
+RUN_PRESENT <- "outputs/captain_seed232373165_simple"
+RUN_FUTURE  <- "outputs/captain_seed232373165_future"
+RUN_STAGED  <- "outputs/captain_seed232373165_future_staged"
 
 ugf <- vect(st_transform(st_read(here("data/UGF_gp.shp","UGF_gp.shp"),quiet=TRUE),3857))
 co  <- mask(rast(file.path(DD,"costs.tif")), ugf, touches=TRUE)

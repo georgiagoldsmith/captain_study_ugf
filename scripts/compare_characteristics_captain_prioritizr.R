@@ -71,9 +71,9 @@ if (length(args)) {
 } else {
   # ---- standard table: the three CAPTAIN variants, then the ILP ----
   captain_runs <- c(
-    "CAPTAIN (simple)"                   = "outputs/captain3_seed232373165_corrected",
-    "CAPTAIN (future)"                   = "outputs/captain3_seed232373165_corrected_future",
-    "CAPTAIN (future + multi time step)" = "outputs/captain3_seed232373165_corrected_future_staged")
+    "CAPTAIN (simple)"                   = "outputs/captain_seed232373165_simple",
+    "CAPTAIN (future)"                   = "outputs/captain_seed232373165_future",
+    "CAPTAIN (future + multi time step)" = "outputs/captain_seed232373165_future_staged")
   for (nm in names(captain_runs)) rows[[nm]] <- captain_row(captain_runs[[nm]])
 
   pz <- as.matrix(rast(here("outputs/prioritizr_p3a_ghm_discount_3km.tif")), wide = TRUE)
@@ -107,6 +107,6 @@ if (!length(args)) {
   t2 <- t2[, colnames(t2) != "reward"]
   cat("\n=== characteristics of the agreement / disagreement cells ===\n")
   print(round(t2, 3))
-  write.csv(t2, here("outputs/prioritzr_captain3_disagreement_characteristics.csv"))
-  cat("\nwritten: outputs/prioritzr_captain3_disagreement_characteristics.csv\n")
+  write.csv(t2, here("outputs/prioritizr_captain_disagreement_characteristics.csv"))
+  cat("\nwritten: outputs/prioritizr_captain_disagreement_characteristics.csv\n")
 }
