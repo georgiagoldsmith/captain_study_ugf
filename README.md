@@ -28,7 +28,10 @@ Not tracked, and needed before anything will run:
 | `data/future lulc/SSP4_RCP34/` | projected land cover, 2020 and 2075 | Zhang et al. 2023 |
 | `data/LC/` | land cover clips (urban, cropland, LCCS) | C3S LCCS 300 m |
 
-`outputs/` is ignored entirely: everything in it is produced by the scripts.
+From `outputs/`, the results are tracked -- the prioritizr solution, the
+two-model comparison maps and tables, and the shared 3 km layers (2.3 MB). The
+twelve CAPTAIN run directories are not: they are ~57 MB, and reproducible by
+re-training.
 
 ## Running it
 
