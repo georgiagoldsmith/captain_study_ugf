@@ -1,0 +1,19 @@
+Species,Habitat,Habitat.Density,density_sensitivity_scaled,habitat_sensitivity_scaled,forest_dependency_scaled,sensitivity_disturbance
+Aquila rapax,Shrubland,2,0.5,0,0,0.16666666666666666
+Chelictinia riocourii,Shrubland,2,0.5,0,0,0.16666666666666666
+Circaetus beaudouini,Woodland,2,0.5,0.5,0,0.3333333333333333
+Necrosyrtes monachus,Shrubland,2,0.5,0,0.5,0.3333333333333333
+Stephanoaetus coronatus,Forest,1,1,1,1,1
+Terathopius ecaudatus,Woodland,2,0.5,0.5,0,0.3333333333333333
+Ceratogymna atrata,Forest,1,1,1,1,1
+Ceratogymna elata,Forest,1,1,1,1,1
+Merops mentalis,Forest,1,1,1,1,1
+Balearica pavonina,Wetland,3,0,0,0,0
+Apalis sharpii,Forest,1,1,1,1,1
+Parmoptila rubrifrons,Forest,2,0.5,1,0.5,0.6666666666666666
+Phyllanthus atripennis,Forest,1,1,1,0.5,0.8333333333333333
+Malaconotus lagdeni,Forest,1,1,1,0.5,0.8333333333333333
+Illadopsis rufescens,Forest,1,1,1,1,1
+Criniger olivaceus,Forest,1,1,1,0.5,0.8333333333333333
+Hylopsar cupreocauda,Forest,1,1,1,0.5,0.8333333333333333
+Scotopelia ussheri,Forest,1,1,1,1,1

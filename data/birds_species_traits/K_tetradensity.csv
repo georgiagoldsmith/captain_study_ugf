@@ -1,0 +1,19 @@
+species,Order1,Mass,density_final,source,K_tetradensity
+Apalis sharpii,Passeriformes,8.7,25.2180403,order-stratified model,226.9623627
+Parmoptila rubrifrons,Passeriformes,9.5,24.44060994,order-stratified model,219.9654894
+Criniger olivaceus,Passeriformes,28.1,16.6134616,order-stratified model,149.5211544
+Illadopsis rufescens,Passeriformes,37,15.06344546,order-stratified model,135.5710092
+Hylopsar cupreocauda,Passeriformes,58,12.83604418,order-stratified model,115.5243976
+Merops mentalis,Coraciiformes,22.5,12.28383211,order-stratified model,110.554489
+Phyllanthus atripennis,Passeriformes,85.6,11.17525256,order-stratified model,100.5772731
+Malaconotus lagdeni,Passeriformes,92.3,10.87946272,order-stratified model,97.91516447
+Ceratogymna atrata,Bucerotiformes,1194.8,7.2,TetraDENSITY direct match,64.8
+Balearica pavonina,Gruiformes,3590,3.679,TetraDENSITY direct match,33.111
+Ceratogymna elata,Bucerotiformes,1917,3.420420759,order-stratified model,30.78378683
+Chelictinia riocourii,Accipitriformes,110,2.282309525,order-stratified model,20.54078573
+Scotopelia ussheri,Strigiformes,787.2,2.113632098,order-stratified model,19.02268888
+Circaetus beaudouini,Accipitriformes,1500,0.900461333,order-stratified model,8.104151994
+Necrosyrtes monachus,Accipitriformes,2043,0.806683415,order-stratified model,7.260150739
+Aquila rapax,Accipitriformes,2236.1,0.781162319,order-stratified model,7.030460869
+Stephanoaetus coronatus,Accipitriformes,3640,0.656774266,order-stratified model,5.910968396
+Terathopius ecaudatus,Accipitriformes,2200,0.4,TetraDENSITY direct match,3.6

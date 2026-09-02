@@ -23,8 +23,8 @@ library(stringr)
 # (all birds, worldwide), and our 18 UGF species + their taxonomic orders
 td <- read_csv("/tmp/tetradensity.csv", show_col_types = FALSE)
 avonet <- read_excel("/tmp/avonet.xlsx", sheet = "AVONET1_BirdLife")
-traits <- read_csv(here::here("data/Birds species status and traits/species_traits.csv"), show_col_types = FALSE)
-orders <- read_csv(here::here("outputs/bird_orders.csv"), show_col_types = FALSE)
+traits <- read_csv(here::here("data/birds_species_traits/species_traits.csv"), show_col_types = FALSE)
+orders <- read_csv(here::here("data/birds_species_traits/bird_orders.csv"), show_col_types = FALSE)
 
 # --- STEP 1: build the training set ---
 
@@ -92,5 +92,5 @@ sp18$K_tetradensity <- round(sp18$density_final * 9, 1)
 out <- sp18 |> select(species, Order1, Mass, density_final, source, K_tetradensity) |>
   arrange(desc(K_tetradensity))
 
-write_csv(out, here::here("outputs/K_tetradensity.csv"))
+write_csv(out, here::here("data/birds_species_traits/K_tetradensity.csv"))
 print(out, n = Inf)
