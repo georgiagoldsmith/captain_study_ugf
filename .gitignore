@@ -3,3 +3,13 @@
 .RData
 .Ruserdata
 .positai
+
+# macOS
+.DS_Store
+
+# Data and outputs live in the project folder but are not versioned:
+# ~199 MB of rasters, and data/gHM/gHM.tif is a symlink that would commit as a
+# broken path. See README/notes for where the data comes from.
+data/
+captain/
+outputs/
